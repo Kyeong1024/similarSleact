@@ -18,9 +18,7 @@ export class UsersService {
   ) {}
 
   async join(email: string, password: string, nickname: string) {
-    if (!email) throw new HttpException('이메일이 없습니다.', 400);
-
-    const user = this.usersRepository.findOne({ where: { email } });
+    const user = await this.usersRepository.findOne({ where: { email } });
 
     if (user) {
       throw new Error('이미존재하는 사용자 입니다.');
