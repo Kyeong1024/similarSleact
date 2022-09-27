@@ -81,10 +81,22 @@ export class ChannelsController {
   }
 
   @Post(':url/channels/:name/chats')
-  createWorkspaceChannelChats() {}
+  async createWorkspaceChannelChats(
+    @Param('url') url: string,
+    @Param('name') name: string,
+    @Body('content') content: string,
+    @User() user: Users,
+  ) {
+    return this.channelsService.createWorkspaceChannelChats({
+      url,
+      name,
+      content,
+      myId: user.id,
+    });
+  }
 
   @Get(':url/channels/:name/unreads')
-  async getChannelUnreadsCount(
+  async getUnreads(
     @Param('url') url: string,
     @Param('name') name: string,
     @Query('after', ParseIntPipe) after: number,

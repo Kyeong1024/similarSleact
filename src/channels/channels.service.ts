@@ -125,6 +125,30 @@ export class ChannelsService {
       .getMany();
   }
 
+  async createWorkspaceChannelChats({ url, name, content, myId }) {
+    const channel = await this.channelsRepository
+      .createQueryBuilder('channel')
+      .innerJoin('channel.Workspace', 'workspace', 'workspace.url = :url', {
+        url,
+      })
+      .where('channel.name = :name', { name })
+      .getOne();
+
+    const chats = new ChannelChats();
+    chats.content = content;
+    chats.UserId = myId;
+    chats.ChannelId = channel.id;
+    const savedChat = await this.channelChatsRepository.save(chats);
+    // 아래 findone과 같다.
+    // savedChat.User = user; -> 물론 myId 대신 user를 가져와야함.
+    // savedChat.Channel = channel;
+
+    const chatWithUser = await this.channelChatsRepository.findOne({
+      where: { id: savedChat.id },
+      relations: ['User', 'Channel'],
+    });
+  }
+
   async getChannelUnreadsCount(url, name, after) {
     const channel = await this.channelsRepository
       .createQueryBuilder('channel')
