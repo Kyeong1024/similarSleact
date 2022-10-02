@@ -6,6 +6,7 @@ import { Channels } from 'src/entities/Channels';
 import { Users } from 'src/entities/Users';
 import { WorkspaceMembers } from 'src/entities/WorkspaceMembers';
 import { Workspaces } from 'src/entities/Workspaces';
+import { EventsGateway } from 'src/events/events.gateway';
 import { DataSource, MoreThan, Repository } from 'typeorm';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class ChannelsService {
     @InjectRepository(ChannelChats)
     private channelChatsRepository: Repository<ChannelChats>,
     private dataSource: DataSource,
+    private readonly eventGateway: EventsGateway,
   ) {}
 
   async getWorkspaceChannels(url, myId) {
@@ -147,6 +149,37 @@ export class ChannelsService {
       where: { id: savedChat.id },
       relations: ['User', 'Channel'],
     });
+
+    this.eventGateway.server
+      .to(`/ws-${url}-${channel.id}`)
+      .emit('message', chatWithUser);
+  }
+
+  async createWorkspaceChannelImages({ url, name, myId, files }) {
+    const channel = await this.channelChatsRepository
+      .createQueryBuilder('channel')
+      .innerJoin('channel.Workspace', 'workspace', 'workspace.url = :url', {
+        url,
+      })
+      .where('channel.name = :name', { name })
+      .getOne();
+
+    for (const file of files) {
+      const chat = new ChannelChats();
+      chat.ChannelId = channel.id;
+      chat.content = file.path;
+      chat.UserId = myId;
+
+      const savedChat = await this.channelChatsRepository.save(chat);
+      const chatWithUser = await this.channelChatsRepository.findOne({
+        where: { id: savedChat.id },
+        relations: ['User', 'Channel'],
+      });
+
+      this.eventGateway.server
+        .to(`/ws-${url}-${chatWithUser.ChannelId}`)
+        .emit('message', chatWithUser);
+    }
   }
 
   async getChannelUnreadsCount(url, name, after) {

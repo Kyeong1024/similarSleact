@@ -6,10 +6,14 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from 'src/common/decorators/user.decorator';
 import { CreateChannelDto } from 'src/common/dto/create-channel.dto';
+import { multerOptions } from 'src/common/util/multer.options';
 import { Users } from 'src/entities/Users';
 import { ChannelsService } from './channels.service';
 
@@ -92,6 +96,22 @@ export class ChannelsController {
       name,
       content,
       myId: user.id,
+    });
+  }
+
+  @UseInterceptors(FilesInterceptor('image', 10, multerOptions()))
+  @Post(':url/channels/:name/images')
+  async createWorkspaceChannelImages(
+    @Param('url') url: string,
+    @Param('name') name: string,
+    @User() user: Users,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ) {
+    return await this.channelsService.createWorkspaceChannelImages({
+      url,
+      name,
+      myId: user.id,
+      files,
     });
   }
 
