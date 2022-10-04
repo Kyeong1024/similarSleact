@@ -29,6 +29,7 @@ export class EventsGateway
   ) {
     const newNamespace = socket.nsp;
     onlineMap[socket.nsp.name][socket.id] = data.id;
+
     newNamespace.emit('onlineList', Object.values(onlineMap[socket.nsp.name]));
     data.channels.forEach((channel) => {
       console.log('channel ==>', channel);

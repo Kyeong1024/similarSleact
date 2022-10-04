@@ -5,11 +5,30 @@ import passport from 'passport';
 import session from 'express-session';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import path from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  if (process.env.NODE_ENV) {
+    app.enableCors({
+      origin: [], // url 넣어줌
+      credentials: true,
+    });
+  } else {
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
+  }
+
+  app.useStaticAssets(path.join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
+  });
+
   app.use(
     session({
       resave: false,
